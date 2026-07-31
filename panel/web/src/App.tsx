@@ -13,10 +13,19 @@ function Splash() {
   );
 }
 
+function SsoHint() {
+  return (
+    <div className="center-screen" style={{ flexDirection: 'column', gap: 16, textAlign: 'center' }}>
+      <div style={{ fontSize: 16, color: '#e53e3e' }}>未找到有效会话</div>
+      <div style={{ fontSize: 13, color: '#888' }}>请返回主系统运营中心重新进入云微</div>
+    </div>
+  );
+}
+
 function RequireAuth({ children }: { children: ReactNode }) {
   const { user, loading } = useAuth();
   if (loading) return <Splash />;
-  if (!user) return <Navigate to="/login" replace />;
+  if (!user) return <SsoHint />;
   return <>{children}</>;
 }
 

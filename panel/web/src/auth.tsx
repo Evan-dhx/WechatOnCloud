@@ -17,6 +17,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const refresh = async () => {
     try {
+      // SSO 免登：检测 URL 中的 sso_token 参数
+      const params = new URLSearchParams(window.location.search);
+      const ssoToken = params.get('sso_token');
+      if (ssoToken) {
+        const resp = await fetch('/api/auth/sso', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token: ssoToken }),
+        });
+        if (resp.ok) {
+          const data = await resp.json();
+          setUser(data.user);
+          window.history.replaceState({}, '', window.location.pathname);
+          return;
+        }
+        // SSO 失败，fall through 到普通 me() 检测
+      }
       const { user } = await api.me();
       setUser(user);
     } catch {

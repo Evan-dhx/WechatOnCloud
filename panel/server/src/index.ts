@@ -95,6 +95,7 @@ import {
   getFontFamily,
 } from './docker.js';
 import { createSession, getSession, destroySession, destroyUserSessions, SESSION_TTL_MS } from './sessions.js';
+import { handleSsoLogin, SESSION_TTL_MS as SSO_TTL } from './sso.js';
 import { parseHost, parseAllowedHosts, isRequestHostAllowed } from './host-guard.js';
 import { CURRENT_VERSION, versionInfo, ensureChecked, checkForUpdate, startUpdateChecker } from './version.js';
 import { triggerSelfUpdate } from './self-update.js';
@@ -138,6 +139,11 @@ app.addHook('onRequest', async (req, reply) => {
 });
 
 await app.register(cookie);
+// 允许同域 iframe 嵌入（主项目通过反向代理同域嵌入 WOC 面板）
+app.addHook('onSend', async (_req, reply) => {
+  reply.removeHeader('x-frame-options');
+  reply.header('content-security-policy', "frame-ancestors 'self'");
+});
 // 文件上传走原始二进制（前端以 application/octet-stream 直传 File）
 app.addContentTypeParser('application/octet-stream', { parseAs: 'buffer' }, (_req, body, done) => done(null, body));
 // Heartbeat and other no-body POST routes send no Content-Type; fall through to this wildcard
@@ -236,6 +242,25 @@ app.post('/api/auth/logout', async (req, reply) => {
   destroySession(req.cookies?.[COOKIE]);
   reply.clearCookie(COOKIE, { path: '/' });
   return { ok: true };
+});
+
+// ---------- SSO 免登（主项目集成用）----------
+app.post('/api/auth/sso', async (req, reply) => {
+  const { token } = (req.body as any) ?? {};
+  if (!token) return reply.code(400).send({ error: 'Missing token' });
+
+  const result = handleSsoLogin(token);
+  if ('error' in result) {
+    return reply.code(result.code).send({ error: result.error });
+  }
+
+  reply.setCookie(COOKIE, result.sessionToken, {
+    httpOnly: true,
+    sameSite: 'lax',
+    path: '/',
+    maxAge: Math.floor(SSO_TTL / 1000),
+  });
+  return { user: result.user };
 });
 
 app.get('/api/auth/me', async (req, reply) => {
