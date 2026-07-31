@@ -6,6 +6,7 @@ import { VitePWA } from 'vite-plugin-pwa';
 const BACKEND = process.env.BACKEND || 'http://localhost:8080';
 
 export default defineConfig({
+  base: '/woc/', // 嵌入主项目 /woc/ 路径下，资源路径带 /woc/ 前缀
   plugins: [
     react(),
     VitePWA({
@@ -19,7 +20,7 @@ export default defineConfig({
         theme_color: '#07C160',
         background_color: '#ffffff',
         display: 'standalone',
-        start_url: '/',
+        start_url: '/woc/',
         icons: [
           { src: 'icon-192.png', sizes: '192x192', type: 'image/png' },
           { src: 'icon-512.png', sizes: '512x512', type: 'image/png' },
@@ -28,7 +29,7 @@ export default defineConfig({
       },
       workbox: {
         // 桌面反代与 API 不能被 SW 拦截
-        navigateFallbackDenylist: [/^\/desktop/, /^\/api/],
+        navigateFallbackDenylist: [/^\/desktop/, /^\/api/, /^\/woc/],
         // 新版本立即接管 + 清理旧缓存，避免更新后仍跑旧代码（硬刷新绕不过 SW）
         clientsClaim: true,
         skipWaiting: true,
