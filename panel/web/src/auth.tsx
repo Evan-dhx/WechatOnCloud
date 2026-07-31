@@ -9,6 +9,8 @@ interface AuthCtx {
   logout: () => Promise<void>;
 }
 
+const BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
+
 const Ctx = createContext<AuthCtx>(null!);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -21,7 +23,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const params = new URLSearchParams(window.location.search);
       const ssoToken = params.get('sso_token');
       if (ssoToken) {
-        const resp = await fetch('/api/auth/sso', {
+        const resp = await fetch(BASE + '/api/auth/sso', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ token: ssoToken }),

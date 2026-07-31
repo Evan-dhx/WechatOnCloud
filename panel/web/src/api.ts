@@ -86,9 +86,13 @@ export interface VersionInfo {
   error: string | null; // 检查失败原因
 }
 
+
+// 基础路径前缀：独立部署时为 ''，嵌入主项目 /woc/ 时为 '/woc'
+const BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
+
 // 原始二进制上传（File 直传 application/octet-stream），用于数据卷上传/解压/恢复
 async function rawUpload(url: string, file: File): Promise<any> {
-  const res = await fetch(url, {
+  const res = await fetch(BASE + url, {
     method: 'POST',
     credentials: 'same-origin',
     headers: { 'content-type': 'application/octet-stream' },
@@ -102,7 +106,7 @@ async function rawUpload(url: string, file: File): Promise<any> {
 async function req<T = any>(path: string, opts: RequestInit = {}): Promise<T> {
   // 仅在有 body 时声明 JSON content-type：否则 Fastify 对「空 body + application/json」会报 400
   const headers = opts.body ? { 'content-type': 'application/json', ...opts.headers } : opts.headers;
-  const res = await fetch(path, {
+  const res = await fetch(BASE + path, {
     credentials: 'same-origin',
     ...opts,
     headers,
@@ -110,9 +114,9 @@ async function req<T = any>(path: string, opts: RequestInit = {}): Promise<T> {
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
     // 会话过期：除登录/探测接口外，任意接口收到 401 都说明 cookie 失效，直接回登录页（避免页面卡在错误态）
-    const isAuthProbe = path.includes('/api/auth/login') || path.includes('/api/auth/me');
+    const isAuthProbe = path.includes('/api/auth/login') || path.includes('/api/auth/me') || path.includes('/api/auth/sso');
     if (res.status === 401 && !isAuthProbe && location.pathname !== '/login') {
-      location.assign('/login');
+      location.assign(BASE + '/login');
     }
     throw new Error((data as any).error || `请求失败 (${res.status})`);
   }
@@ -218,10 +222,10 @@ export const api = {
   // 一键升级全部（异步，立即返回；先拉镜像再判定落后，进度看 upgradeStatus().upgradeAll）。
   upgradeAllInstances: () =>
     req<{ ok: boolean; started: boolean }>('/api/admin/instances/upgrade-all', { method: 'POST' }),
-  instanceLogsUrl: (id: string) => `/api/admin/instances/${id}/logs`,
+  instanceLogsUrl: (id: string) => `${BASE}/api/admin/instances/${id}/logs`,
   // 全局日志 / 诊断包（范围 24h/7d/30d/1y）
-  diagnosticsUrl: (range: string) => `/api/admin/diagnostics?range=${encodeURIComponent(range)}`,
-  panelLogUrl: (range: string) => `/api/admin/panel-log?range=${encodeURIComponent(range)}`,
+  diagnosticsUrl: (range: string) => `${BASE}/api/admin/diagnostics?range=${encodeURIComponent(range)}`,
+  panelLogUrl: (range: string) => `${BASE}/api/admin/panel-log?range=${encodeURIComponent(range)}`,
 
   // 文件中转
   listFiles: (id: string) => req<{ files: { name: string; size: number }[] }>(`/api/instances/${id}/files`),
@@ -235,7 +239,7 @@ export const api = {
     if (!res.ok) throw new Error(((await res.json().catch(() => ({}))) as any).error || '上传失败');
     return res.json();
   },
-  downloadFileUrl: (id: string, name: string) => `/api/instances/${id}/download?name=${encodeURIComponent(name)}`,
+  downloadFileUrl: (id: string, name: string) => `${BASE}/api/instances/${id}/download?name=${encodeURIComponent(name)}`,
   deleteFile: (id: string, name: string) => req(`/api/instances/${id}/files?name=${encodeURIComponent(name)}`, { method: 'DELETE' }),
 
   // 数据卷管理（仅管理员）
@@ -248,8 +252,8 @@ export const api = {
   volumeDelete: (id: string, path: string) =>
     req(`/api/admin/instances/${id}/volume?path=${encodeURIComponent(path)}`, { method: 'DELETE' }),
   volumeDownloadUrl: (id: string, path: string) =>
-    `/api/admin/instances/${id}/volume/download?path=${encodeURIComponent(path)}`,
-  volumeBackupUrl: (id: string) => `/api/admin/instances/${id}/volume/backup`,
+    `${BASE}/api/admin/instances/${id}/volume/download?path=${encodeURIComponent(path)}`,
+  volumeBackupUrl: (id: string) => `${BASE}/api/admin/instances/${id}/volume/backup`,
   volumeUpload: (id: string, path: string, file: File) =>
     rawUpload(`/api/admin/instances/${id}/volume/upload?path=${encodeURIComponent(path)}&name=${encodeURIComponent(file.name)}`, file),
   volumeExtract: (id: string, path: string, file: File) =>
