@@ -7,7 +7,7 @@
  * 功能：验证主项目签发的 HMAC-SHA256 SSO token，自动创建/同步用户并建立会话。
  */
 import { randomBytes, createHmac, timingSafeEqual } from 'node:crypto';
-import { findByUsername, createSub, publicUser, type User } from './store.js';
+import { findByUsername, createSub, publicUser, listInstances, type User } from './store.js';
 import { createSession, SESSION_TTL_MS } from './sessions.js';
 
 const SSO_SECRET = process.env.WOC_SSO_SECRET || '';
@@ -80,10 +80,12 @@ export function handleSsoLogin(token: string): { sessionToken: string; user: Ret
       return { error: 'Admin account not found in WOC', code: 404 };
     }
     // 自动创建子账号（JIT provisioning）
+    // 新用户默认获得所有实例的访问权限，管理员可事后在用户管理中收回
     const randomPwd = randomBytes(16).toString('hex');
+    const allInstanceIds = listInstances().map((i) => i.id);
     try {
-      user = createSub(payload.username, randomPwd, []) as any;
-      console.log(`[SSO] 自动创建子账号: ${payload.username}`);
+      user = createSub(payload.username, randomPwd, allInstanceIds) as any;
+      console.log(`[SSO] 自动创建子账号: ${payload.username} (已分配 ${allInstanceIds.length} 个实例)`);
     } catch (e: any) {
       return { error: `Failed to create user: ${e.message}`, code: 500 };
     }
