@@ -12,6 +12,8 @@
 // 麦克风需要「安全上下文」(HTTPS 或 localhost) 才有 getUserMedia；局域网 http 下浏览器禁用，
 // 此时自动跳过麦克风、只保留扬声器。
 
+import { BASE } from './api';
+
 // kclient 服务端用的 socket.io 版本未知，为避免协议不匹配，动态加载它自带的 socket.io.js
 // （经反代取 /desktop/<id>/audio/socket.io/socket.io.js），用全局 io，而非打包我们自己的版本。
 function loadIo(id: string): Promise<any> {
@@ -22,7 +24,7 @@ function loadIo(id: string): Promise<any> {
   const p = new Promise<any>((resolve, reject) => {
     const s = document.createElement('script');
     s.id = 'woc-socketio';
-    s.src = `/desktop/${encodeURIComponent(id)}/audio/socket.io/socket.io.js`;
+    s.src = `${BASE}/desktop/${encodeURIComponent(id)}/audio/socket.io/socket.io.js`;
     s.onload = () => ((window as any).io ? resolve((window as any).io) : reject(new Error('io 未就绪')));
     s.onerror = () => reject(new Error('加载 socket.io 失败'));
     document.head.appendChild(s);
@@ -144,7 +146,7 @@ export class VncAudio {
     const io = await loadIo(this.id);
     if (this.destroyed) return;
     this.socket = io(window.location.origin, {
-      path: `/desktop/${this.id}/audio/socket.io`,
+      path: `${BASE}/desktop/${this.id}/audio/socket.io`,
       transports: ['websocket', 'polling'],
       withCredentials: true,
       reconnection: true,

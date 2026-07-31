@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { api, appProfile } from '../api';
+import { api, appProfile, BASE } from '../api';
 import { useUI } from '../ui';
 import { useAuth } from '../auth';
 import { useInstances } from '../AppShell';
@@ -8,8 +8,10 @@ import { VncAudio } from '../vncAudio';
 
 // KasmVNC noVNC 页面；反代按实例隔离：/desktop/<id>/* → 对应容器，注入凭据。
 function desktopUrl(id: string) {
+  // path 参数是 noVNC 建立 WebSocket 的相对路径，嵌入模式下需带 /woc 前缀
+  const wsPath = BASE ? `${BASE.replace(/^\//, '')}/desktop/${id}/websockify` : `desktop/${id}/websockify`;
   return (
-    `/desktop/${id}/vnc/index.html?autoconnect=1&path=desktop/${id}/websockify&resize=remote` +
+    `${BASE}/desktop/${id}/vnc/index.html?autoconnect=1&path=${wsPath}&resize=remote` +
     '&reconnect=true&reconnect_delay=2000&clipboard_up=true&clipboard_down=true&clipboard_seamless=true'
   );
 }

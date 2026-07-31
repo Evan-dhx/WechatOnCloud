@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useRef, useState, type ReactNode 
 import { Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from './auth';
 import { useUI, PasswordInput } from './ui';
-import { api, appProfile, type InstanceWithStatus } from './api';
+import { api, appProfile, BASE, type InstanceWithStatus } from './api';
 import { InstanceIcon } from './AppIcon';
 import { getThemeMode, applyThemeMode, nextThemeMode, resolveDark, type ThemeMode } from './theme';
 import InstanceView from './pages/Desktop';
@@ -175,7 +175,7 @@ function Sidebar({ collapsed, onToggleCollapsed }: { collapsed: boolean; onToggl
     <aside className="sidebar">
       <div className="sb-top">
         <div className="sb-brand">
-          <img src="/favicon.svg" className="sb-logo" alt="" />
+          <img src={`${BASE}/favicon.svg`} className="sb-logo" alt="" />
           {!collapsed && <span className="sb-name">云微</span>}
         </div>
         <button className="sb-collapse" title="折叠侧栏 (⌘B)" onClick={onToggleCollapsed}>
@@ -370,7 +370,7 @@ function HomeView({ onOpenMenu, onChangePassword }: { onOpenMenu: () => void; on
         {loaded && instances.length === 0 ? (
           <div className="empty-state">
             <div className="empty-blob">
-              <img src="/favicon.svg" alt="" />
+              <img src={`${BASE}/favicon.svg`} alt="" />
             </div>
             <div className="empty-title">还没有实例</div>
             <div className="empty-sub">{isAdmin ? '去「管理」新建一个实例' : '请联系管理员为你分配实例'}</div>

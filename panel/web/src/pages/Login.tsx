@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth';
 import { PasswordInput } from '../ui';
+import { BASE } from '../api';
 
 export default function Login() {
   const { login } = useAuth();
@@ -31,7 +32,7 @@ export default function Login() {
         <form className="card login-card" onSubmit={submit}>
           <div className="brand">
             <div className="brand-logo">
-              <img src="/favicon.svg" alt="" />
+              <img src={`${BASE}/favicon.svg`} alt="" />
             </div>
             <h1>云微</h1>
             <p className="muted">登录以访问 NAS 上的微信</p>

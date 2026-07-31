@@ -88,7 +88,7 @@ export interface VersionInfo {
 
 
 // 基础路径前缀：独立部署时为 ''，嵌入主项目 /woc/ 时为 '/woc'
-const BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
+export const BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
 
 // 原始二进制上传（File 直传 application/octet-stream），用于数据卷上传/解压/恢复
 async function rawUpload(url: string, file: File): Promise<any> {
@@ -115,7 +115,7 @@ async function req<T = any>(path: string, opts: RequestInit = {}): Promise<T> {
   if (!res.ok) {
     // 会话过期：除登录/探测接口外，任意接口收到 401 都说明 cookie 失效，直接回登录页（避免页面卡在错误态）
     const isAuthProbe = path.includes('/api/auth/login') || path.includes('/api/auth/me') || path.includes('/api/auth/sso');
-    if (res.status === 401 && !isAuthProbe && location.pathname !== '/login') {
+    if (res.status === 401 && !isAuthProbe && !location.pathname.endsWith('/login')) {
       location.assign(BASE + '/login');
     }
     throw new Error((data as any).error || `请求失败 (${res.status})`);
@@ -230,7 +230,7 @@ export const api = {
   // 文件中转
   listFiles: (id: string) => req<{ files: { name: string; size: number }[] }>(`/api/instances/${id}/files`),
   uploadFile: async (id: string, file: File) => {
-    const res = await fetch(`/api/instances/${id}/upload?name=${encodeURIComponent(file.name)}`, {
+    const res = await fetch(`${BASE}/api/instances/${id}/upload?name=${encodeURIComponent(file.name)}`, {
       method: 'POST',
       credentials: 'same-origin',
       headers: { 'content-type': 'application/octet-stream' },
@@ -271,7 +271,7 @@ export const api = {
   // 桌面壁纸
   listBackgrounds: (id: string) => req<{ backgrounds: string[] }>(`/api/admin/instances/${id}/backgrounds`),
   uploadBackground: async (id: string, name: string, file: File) => {
-    const res = await fetch(`/api/admin/instances/${id}/backgrounds?name=${encodeURIComponent(name)}`, {
+    const res = await fetch(`${BASE}/api/admin/instances/${id}/backgrounds?name=${encodeURIComponent(name)}`, {
       method: 'POST', credentials: 'same-origin',
       headers: { 'content-type': 'application/octet-stream' }, body: file,
     });
@@ -288,7 +288,7 @@ export const api = {
   // 字体管理
   listFonts: (id: string) => req<{ fonts: string[] }>(`/api/admin/instances/${id}/fonts`),
   uploadFont: async (id: string, name: string, file: File) => {
-    const res = await fetch(`/api/admin/instances/${id}/fonts?name=${encodeURIComponent(name)}`, {
+    const res = await fetch(`${BASE}/api/admin/instances/${id}/fonts?name=${encodeURIComponent(name)}`, {
       method: 'POST', credentials: 'same-origin',
       headers: { 'content-type': 'application/octet-stream' }, body: file,
     });

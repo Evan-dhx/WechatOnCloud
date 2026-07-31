@@ -17,9 +17,12 @@ if ('serviceWorker' in navigator) {
   });
 }
 
+// 嵌入主项目时 base 为 '/woc/'，独立部署时为 '/'；BrowserRouter 需要 basename 才能正确匹配路由
+const basename = import.meta.env.BASE_URL.replace(/\/$/, '') || '/';
+
 createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <BrowserRouter>
+    <BrowserRouter basename={basename}>
       <App />
     </BrowserRouter>
   </React.StrictMode>,
