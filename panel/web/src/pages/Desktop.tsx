@@ -354,7 +354,7 @@ export default function InstanceView({ onOpenMenu }: { onOpenMenu: () => void })
     };
   }, [showVnc]);
 
-  // 粘贴图片 → 上传到桌面（issue #91）：截图不能经 VNC 剪贴板送进容器（RFB 剪贴板仅文本），故把粘贴的
+  // 粘贴图片 → 上传到桌面（issue #91）：截图不能经 VNC 剪貼板送进容器（RFB 剪貼板仅文本），故把粘贴的
   // 图片存成桌面文件，用户在应用里「+/文件」取用即可。焦点在输入框/文本域时不拦截（让原生粘贴文字生效）。
   useEffect(() => {
     if (!showVnc) return;
@@ -761,7 +761,7 @@ export default function InstanceView({ onOpenMenu }: { onOpenMenu: () => void })
   };
 
   // 桌面加载后给 noVNC 原生控制条注入"实心可见"样式：原生背景近纯黑半透明，叠在深色/黑屏上看不见。
-  // 注入后，用 KasmVNC 自带的左侧边缘手柄拉出控制条（音频/剪贴板/键盘/全屏等）时即可见。iframe 同源可直接访问。
+  // 注入后，用 KasmVNC 自带的左侧边缘手柄拉出控制条（音频/剪貼板/键盘/全屏等）时即可见。iframe 同源可直接访问。
   const injectVncStyle = () => {
     try {
       const doc = frameRef.current?.contentDocument;
@@ -780,9 +780,9 @@ export default function InstanceView({ onOpenMenu }: { onOpenMenu: () => void })
     }
   };
 
-  // 跨设备剪贴板（文本）：通过同源 iframe 直接喂给 KasmVNC 自带的剪贴板 textarea 并触发其发送逻辑
-  // （内部走 RFB.clipboardPasteFrom → clientCutText）。不依赖浏览器异步剪贴板 API，故 http/局域网 IP 下也可用，
-  // 规避了"非安全上下文禁用 navigator.clipboard 导致粘贴失败"的问题。文本会进入容器系统剪贴板，
+  // 跨设备剪貼板（文本）：通过同源 iframe 直接喂给 KasmVNC 自带的剪貼板 textarea 并触发其发送逻辑
+  // （内部走 RFB.clipboardPasteFrom → clientCutText）。不依赖浏览器异步剪貼板 API，故 http/局域网 IP 下也可用，
+  // 规避了"非安全上下文禁用 navigator.clipboard 导致粘贴失败"的问题。文本会进入容器系统剪貼板，
   // 在微信输入框按 Ctrl+V 即可粘贴。
   const pushClipboardToRemote = (text: string): boolean => {
     try {
@@ -804,7 +804,7 @@ export default function InstanceView({ onOpenMenu }: { onOpenMenu: () => void })
       return;
     }
     if (pushClipboardToRemote(t)) {
-      toast('已发送到容器剪贴板，请在应用输入框按 Ctrl+V 粘贴', 'ok');
+      toast('已发送到容器剪貼板，请在应用输入框按 Ctrl+V 粘贴', 'ok');
     } else {
       toast('发送失败：桌面尚未连接', 'error');
     }
@@ -840,14 +840,14 @@ export default function InstanceView({ onOpenMenu }: { onOpenMenu: () => void })
     }
   };
 
-  // 读取容器（微信侧）当前剪贴板内容到本框，便于把容器内复制的文字带回本地
+  // 读取容器（微信侧）当前剪貼板内容到本框，便于把容器内复制的文字带回本地
   const pullClipboardFromRemote = () => {
     try {
       const doc = frameRef.current?.contentDocument;
       const ta = doc?.getElementById('noVNC_clipboard_text') as HTMLTextAreaElement | null;
       if (ta) {
         setClipText(ta.value || '');
-        toast('已读取容器剪贴板', 'ok');
+        toast('已读取容器剪貼板', 'ok');
       } else {
         toast('读取失败：桌面尚未连接', 'error');
       }
@@ -912,7 +912,7 @@ export default function InstanceView({ onOpenMenu }: { onOpenMenu: () => void })
           <>
             <button
               className="ws-action"
-              title="文件传输"
+              title="文件傳輸"
               onClick={() => {
                 setShowFiles((v) => !v);
                 if (!showFiles) refreshFiles();
@@ -924,38 +924,38 @@ export default function InstanceView({ onOpenMenu }: { onOpenMenu: () => void })
               className={'ws-action' + (inputMode === 'seamless' ? ' on' : '')}
               title={
                 inputMode === 'seamless'
-                  ? '无感输入：直接在应用输入框里打中文（提交后转发，已修复混数字丢字）。点击切回「转发输入条」'
-                  : '转发输入：用底部输入条打中文，最稳。点击切到「无感输入」（直接在应用里打）'
+                  ? '無感輸入：直接在應用輸入框裡打中文（提交後轉發，已修復混數字丟字）。點擊切回「轉發輸入條」'
+                  : '轉發輸入：用底部輸入條打中文，最穩。點擊切到「無感輸入」（直接在應用裡打）'
               }
               onClick={() => setMode(inputMode === 'seamless' ? 'forward' : 'seamless')}
             >
-              输入：{inputMode === 'seamless' ? '无感' : '转发'}
+              輸入：{inputMode === 'seamless' ? '無感' : '轉發'}
             </button>
             <button
               className="ws-action"
-              title="把文本发送到容器剪贴板（局域网 http 下也可用）"
+              title="把文本發送到容器剪貼板（區域網 http 下也可用）"
               onClick={() => setShowClip((v) => !v)}
             >
-              剪贴板
+              剪貼板
             </button>
             <button
               className={'ws-action' + (soundOn ? ' on' : '')}
-              title={soundOn ? '声音已开：已连接实例音频。点击关闭（关闭可减少一条到实例的连接，更稳）' : '声音已关：默认不连音频桥（连接更稳）。点此开启以听到实例声音'}
+              title={soundOn ? '聲音已開：已連接實例音頻。點擊關閉（關閉可減少一條到實例的連接，更穩）' : '聲音已關：預設不連音頻橋（連接更穩）。點此開啟以聽到實例聲音'}
               onClick={toggleSound}
             >
-              声音：{soundOn ? '开' : '关'}
+              聲音：{soundOn ? '開' : '關'}
             </button>
             {soundOn && (
               <button
                 className={'ws-action' + (micOn ? ' on' : '')}
                 title={
                   micOn
-                    ? '麦克风已开：占用本机麦克风（AirPods 等可能被切到低音质通话模式）。点击关闭'
-                    : '麦克风已关：不占用麦克风，AirPods 保持高音质输出。需要语音/通话时点此开启'
+                    ? '麥克風已開：佔用本機麥克風（AirPods 等可能被切到低音質通話模式）。點擊關閉'
+                    : '麥克風已關：不佔用麥克風，AirPods 保持高音質輸出。需要語音/通話時點此開啟'
                 }
                 onClick={toggleMic}
               >
-                麦克风：{micOn ? '开' : '关'}
+                麥克風：{micOn ? '開' : '關'}
               </button>
             )}
             {isAdmin && (
@@ -1121,9 +1121,9 @@ export default function InstanceView({ onOpenMenu }: { onOpenMenu: () => void })
             <div className="iv-lock">
               <div className="iv-lock-card">
                 <div className="iv-lock-title">「{control.holder}」正在操作</div>
-                <div className="iv-lock-sub">为避免多端互相干扰，你当前为只读模式。</div>
+                <div className="iv-lock-sub">為避免多端互相干擾，你當前為只讀模式。</div>
                 <button className="btn btn-primary iv-notice-btn" onClick={takeControl}>
-                  申请控制
+                  申請控制
                 </button>
               </div>
             </div>
@@ -1132,7 +1132,7 @@ export default function InstanceView({ onOpenMenu }: { onOpenMenu: () => void })
           {showFiles && (
             <div className="iv-files">
               <div className="files-head">
-                <span>文件传输</span>
+                <span>文件傳輸</span>
                 <button className="btn-text" onClick={() => setShowFiles(false)}>
                   关闭
                 </button>
@@ -1175,7 +1175,7 @@ export default function InstanceView({ onOpenMenu }: { onOpenMenu: () => void })
           {showClip && (
             <div className="iv-files">
               <div className="files-head">
-                <span>文本剪贴板</span>
+                <span>文本剪貼板</span>
                 <button className="btn-text" onClick={() => setShowClip(false)}>
                   关闭
                 </button>
@@ -1184,17 +1184,17 @@ export default function InstanceView({ onOpenMenu }: { onOpenMenu: () => void })
                 className="clip-area"
                 value={clipText}
                 onChange={(e) => setClipText(e.target.value)}
-                placeholder="在此输入或粘贴文本，点「发送到剪贴板」后到应用输入框按 Ctrl+V 粘贴"
+                placeholder="在此输入或粘贴文本，点「发送到剪貼板」后到应用输入框按 Ctrl+V 粘贴"
                 rows={5}
               />
               <button className="btn btn-primary files-upload" onClick={sendClip}>
-                发送到剪贴板
+                发送到剪貼板
               </button>
               <button className="btn-text" style={{ alignSelf: 'flex-start', marginTop: 6 }} onClick={pullClipboardFromRemote}>
-                ↓ 读取容器剪贴板到此框
+                ↓ 读取容器剪貼板到此框
               </button>
               <div className="files-hint">
-                局域网 http 访问时浏览器会禁用系统级剪贴板同步，故用此框中转：文本→容器剪贴板，再在应用里 Ctrl+V。
+                局域网 http 访问时浏览器会禁用系统级剪貼板同步，故用此框中转：文本→容器剪貼板，再在应用里 Ctrl+V。
               </div>
             </div>
           )}
@@ -1303,8 +1303,8 @@ export default function InstanceView({ onOpenMenu }: { onOpenMenu: () => void })
                   }}
                   placeholder={
                     autoEnter
-                      ? '中文输入这里 → 回车直接发送到应用（先点好应用的输入框）。Shift+回车换行。'
-                      : '中文输入这里 → 回车只把文字填进应用输入框，不自动发送（发送由你按）。Shift+回车换行。'
+                      ? '中文輸入這裡 → 回車直接發送到應用（先點好應用的輸入框）。Shift+回車換行。'
+                      : '中文輸入這裡 → 回車只把文字填進應用輸入框，不自動發送（發送由你按）。Shift+回車換行。'
                   }
                   rows={1}
                 />
