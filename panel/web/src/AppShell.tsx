@@ -174,7 +174,7 @@ function Sidebar({ collapsed, onToggleCollapsed }: { collapsed: boolean; onToggl
 
   return (
     <aside className="sidebar">
-      <div className="sb-top">
+      <div className="sb-top" style={{ display: 'none' }}>
         <div className="sb-brand">
           <img src={`${BASE}/favicon.svg`} className="sb-logo" alt="" />
           {!collapsed && <span className="sb-name">云微</span>}
