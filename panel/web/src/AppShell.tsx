@@ -158,6 +158,7 @@ function Sidebar({ collapsed, onToggleCollapsed }: { collapsed: boolean; onToggl
   const nav = useNavigate();
   const loc = useLocation();
   const isAdmin = user?.role === 'admin';
+  const isEmbedded = typeof window !== 'undefined' && window.self !== window.top; // iframe 嵌入时隐藏退出
   const go = (p: string) => nav(p);
 
   // 有新版时在「管理」入口点个红点（仅管理员，因为升级面板需管理员在宿主操作）。
@@ -210,18 +211,21 @@ function Sidebar({ collapsed, onToggleCollapsed }: { collapsed: boolean; onToggl
       </div>
 
       <div className="sb-footer">
+        {isAdmin && (
         <button
           className={'sb-item' + (loc.pathname === '/admin' ? ' on' : '')}
           onClick={() => go('/admin')}
-          title={isAdmin && hasUpdate ? '管理 · 有新版本可用' : isAdmin ? '管理' : '设置'}
+          title={hasUpdate ? '管理 · 有新版本可用' : '管理'}
         >
           <span className="sb-ic">
             {Icon.gear}
-            {isAdmin && hasUpdate && <span className="sb-updot" />}
+            {hasUpdate && <span className="sb-updot" />}
           </span>
-          {!collapsed && <span className="sb-label">{isAdmin ? '管理' : '设置'}</span>}
-          {!collapsed && isAdmin && hasUpdate && <span className="sb-updot-text">新版</span>}
+          {!collapsed && <span className="sb-label">管理</span>}
+          {!collapsed && hasUpdate && <span className="sb-updot-text">新版</span>}
         </button>
+        )}
+        {!isEmbedded && (
         <button
           className="sb-item"
           title="退出"
@@ -232,6 +236,7 @@ function Sidebar({ collapsed, onToggleCollapsed }: { collapsed: boolean; onToggl
           <span className="sb-ic">{Icon.logout}</span>
           {!collapsed && <span className="sb-label">退出</span>}
         </button>
+        )}
         {!collapsed && (
           <div className="sb-user">
             {user?.username}
