@@ -89,7 +89,7 @@ const DIAG_RANGE_OPTIONS = [
   { key: '1y', label: '1 年' },
 ];
 
-// 「診斷與日誌」（仅管理员）：单实例「日誌」只记录該实例日誌；這里一键打包全局——系統信息 +
+// 「診斷與日誌」（仅管理员）：单实例「日誌」只記錄該实例日誌；這里一键打包全局——系統信息 +
 // 面板運維日誌 + 全部实例容器狀態/日誌 + 容器清單，便于排查部署/創建卡死/黑屏不可用等問題。
 function DiagnosticsSection() {
   const [range, setRange] = useState('24h');
@@ -132,7 +132,7 @@ function DiagnosticsSection() {
   );
 }
 
-// 「關於」：显示真实構建版本号 + 檢測新版（後台已每 6h 查 Docker Hub/GHCR；這里读缓存并可手动重查）。
+// 「關於」：显示真实構建版本号 + 檢測新版（後台已每 6h 查 Docker Hub/GHCR；這里读缓存并可手動重查）。
 function AboutSection({ isAdmin }: { isAdmin: boolean }) {
   const { toast, confirm } = useUI();
   const [info, setInfo] = useState<VersionInfo | null>(null);
@@ -148,13 +148,13 @@ function AboutSection({ isAdmin }: { isAdmin: boolean }) {
         .upgradeStatus()
         .then((s) => {
           setOutdatedInst(s.outdatedCount);
-          // 没有任何实例时不提示"实例鏡像有新版"（全新安裝的噪音）
+          // 没有任何实例时不提示"实例鏡像有新版"（全新安裝的噪聲）
           setRemoteNewer(s.remoteNewer === true && s.instances.length > 0);
         })
         .catch(() => {});
   }, [isAdmin]);
 
-  // 一鍵更新面板：拉新鏡像 + 派生 helper 容器重建 woc-panel（數據保留，带失败回滚）。
+  // 一鍵更新面板：拉新鏡像 + 派生 helper 容器重建 woc-panel（數據保留，带失敗回滚）。
   // 觸發後面板會被重建、本連接短暫中斷，約 20s 後自動刷新到新版本。
   const selfUpdate = async () => {
     const ok = await confirm({
@@ -169,11 +169,11 @@ function AboutSection({ isAdmin }: { isAdmin: boolean }) {
       toast(r.message || '已開始更新，面板将重啟，请稍候…', 'ok');
       window.setTimeout(() => window.location.reload(), 25000); // 等新面板起来後自動刷新
     } catch (e: any) {
-      toast(e.message || '更新失败', 'error');
+      toast(e.message || '更新失敗', 'error');
       setUpdating(false);
     }
   };
-  // 是否開發版由後端 info.isDev 给出（非正式 vX.Y.Z）。開發版允许一键「升級到正式版」。
+  // 是否開發版由後端 info.isDev 给出（非正式 vX.Y.Z）。開發版允許一键「升級到正式版」。
 
   const check = async () => {
     setChecking(true);
@@ -295,10 +295,10 @@ export default function Admin({ onOpenMenu, onChangePassword }: { onOpenMenu: ()
   const [upg, setUpg] = useState<{ outdatedCount: number; outdatedIds: string[]; remoteNewer: boolean } | null>(null); // 鏡像落後的实例 + 远端有新版
   const [upgradingAll, setUpgradingAll] = useState(false);
   const [upgProgress, setUpgProgress] = useState(''); // 一鍵升級进度文案（"2/5 · 升級「xxx」…"）
-  const pollingRef = useRef(false); // 防止 load() 恢復轮询与手动发起的轮询并存
-  // 未使用的旧數據卷（来自之前删实例时未勾选"彻底清除"）：允许复用以继承聊天记录，或显式删除。
+  const pollingRef = useRef(false); // 防止 load() 恢復轮询与手動发起的轮询並存
+  // 未使用的舊數據卷（来自之前删实例时未勾選"彻底清除"）：允許複用以繼承聊天記錄，或顯式刪除。
   const [orphanVols, setOrphanVols] = useState<{ name: string; createdAt?: string; sizeBytes?: number }[]>([]);
-  // 残留 woc-wx-* 容器（runInstance 启动失败遗留的 Created 容器等）：占着卷名讓删卷报 409。
+  // 殘留 woc-wx-* 容器（runInstance 启动失敗遺留的 Created 容器等）：占着卷名讓删卷报 409。
   const [orphanConts, setOrphanConts] = useState<{ id: string; name: string; status: string; volumeName?: string }[]>([]);
   const setAct = (id: string, label: string | null) =>
     setActing((a) => {
@@ -320,7 +320,7 @@ export default function Admin({ onOpenMenu, onChangePassword }: { onOpenMenu: ()
     } catch (e: any) {
       setErr(e.message);
     }
-    // 孤儿卷 / 残留容器独立 catch：docker 接口失败不应阻塞用戶/实例视圖
+    // 孤儿卷 / 殘留容器独立 catch：docker 接口失敗不应阻塞用戶/实例视圖
     try {
       const { volumes } = await api.listOrphanVolumes();
       setOrphanVols(volumes);
@@ -330,10 +330,10 @@ export default function Admin({ onOpenMenu, onChangePassword }: { onOpenMenu: ()
     try {
       const s = await api.upgradeStatus();
       setUpg({ outdatedCount: s.outdatedCount, outdatedIds: s.outdatedIds, remoteNewer: s.remoteNewer === true });
-      // 刷新页面/重进管理页时發現後台一鍵升級還在跑 → 恢復进度条与輪詢
+      // 刷新页面/重进管理页时發現後台一鍵升級還在跑 → 恢復進度條与輪詢
       if (s.upgradeAll.running && !pollingRef.current) void pollUpgradeAll();
     } catch {
-      /* ignore：更新檢測失败不影响管理页 */
+      /* ignore：更新檢測失敗不影响管理页 */
     }
     try {
       const { containers } = await api.listOrphanContainers();
@@ -345,15 +345,15 @@ export default function Admin({ onOpenMenu, onChangePassword }: { onOpenMenu: ()
 
   const removeOrphanCont = async (c: { id: string; name: string }) => {
     const ok = await confirm({
-      title: `删除残留容器「${c.name}」？`,
-      body: '此容器不属于任何登记实例（多为創建失败遗留）。删除不會动數據卷，删後才能继续清理同名旧數據卷。',
+      title: `刪除殘留容器「${c.name}」？`,
+      body: '此容器不属于任何登記实例（多为創建失敗遺留）。刪除不會动數據卷，删後才能繼續清理同名舊數據卷。',
       danger: true,
-      confirmText: '删除容器',
+      confirmText: '刪除容器',
     });
     if (!ok) return;
     try {
       await api.deleteOrphanContainer(c.id);
-      toast('已删除残留容器，可继续清理數據卷', 'ok');
+      toast('已刪除殘留容器，可繼續清理數據卷', 'ok');
       setOrphanConts((cs) => cs.filter((x) => x.id !== c.id));
       // 容器走了之後，原本被它占着的卷可能從"被引用"翻成"孤儿"，刷新一次
       try {
@@ -363,24 +363,24 @@ export default function Admin({ onOpenMenu, onChangePassword }: { onOpenMenu: ()
         /* ignore */
       }
     } catch (e: any) {
-      toast(e.message || '删除失败', 'error');
+      toast(e.message || '刪除失敗', 'error');
     }
   };
 
   const removeOrphanVol = async (name: string) => {
     const ok = await confirm({
       title: `徹底刪除數據卷「${name}」？`,
-      body: '該卷里保存的微信本地數據（聊天记录缓存等）将永久消失，无法恢復。',
+      body: '該卷里保存的微信本地數據（聊天記錄缓存等）将永久消失，无法恢復。',
       danger: true,
       confirmText: '徹底刪除',
     });
     if (!ok) return;
     try {
       await api.deleteOrphanVolume(name);
-      toast('已删除數據卷', 'ok');
+      toast('已刪除數據卷', 'ok');
       setOrphanVols((vs) => vs.filter((v) => v.name !== name));
     } catch (e: any) {
-      toast(e.message || '删除失败', 'error');
+      toast(e.message || '刪除失敗', 'error');
     }
   };
 
@@ -408,7 +408,7 @@ export default function Admin({ onOpenMenu, onChangePassword }: { onOpenMenu: ()
       timer.current = window.setTimeout(load, 1000);
       toast(kind === 'install' ? '已開始下載微信' : '已開始更新', 'ok');
     } catch (e: any) {
-      toast(e.message || '操作失败', 'error');
+      toast(e.message || '操作失敗', 'error');
     }
   };
 
@@ -419,7 +419,7 @@ export default function Admin({ onOpenMenu, onChangePassword }: { onOpenMenu: ()
       toast('实例已启动', 'ok');
       await load();
     } catch (e: any) {
-      toast(e.message || '启动失败', 'error');
+      toast(e.message || '启动失敗', 'error');
     } finally {
       setAct(inst.id, null);
     }
@@ -431,7 +431,7 @@ export default function Admin({ onOpenMenu, onChangePassword }: { onOpenMenu: ()
     try {
       if (kind === 'upgrade') {
         // 升級是後端异步任务（拉鏡像可能數分鍾）：发起後轮询 upgradingIds 直到完成，
-        // 避免同步等待被反代掐断而误报失败（旧版实况）。
+        // 避免同步等待被反代掐断而误报失敗（舊版实况）。
         await api.instanceUpgrade(inst.id);
         toast('已開始升級：拉取最新鏡像并重建（後台進行）…', 'info');
         for (let i = 0; i < 400; i++) {
@@ -439,13 +439,13 @@ export default function Admin({ onOpenMenu, onChangePassword }: { onOpenMenu: ()
           try {
             const s = await api.upgradeStatus();
             if (!s.upgradingIds.includes(inst.id)) {
-              // 完成後据"是否仍落後"给结论（失败详情在面板日誌）
+              // 完成後据"是否仍落後"给结论（失敗详情在面板日誌）
               if (s.outdatedIds.includes(inst.id)) toast('升級未完成，请查看「面板日誌」', 'error');
               else toast('已升級到最新鏡像并重啟', 'ok');
               break;
             }
           } catch {
-            /* 面板短暫不可达，继续轮询 */
+            /* 面板短暫不可达，繼續轮询 */
           }
         }
       } else {
@@ -454,7 +454,7 @@ export default function Admin({ onOpenMenu, onChangePassword }: { onOpenMenu: ()
       }
       await load();
     } catch (e: any) {
-      toast(e.message || '操作失败', 'error');
+      toast(e.message || '操作失敗', 'error');
     } finally {
       setAct(inst.id, null);
     }
@@ -480,12 +480,12 @@ export default function Admin({ onOpenMenu, onChangePassword }: { onOpenMenu: ()
           if (p.total === 0) toast('所有实例已是最新鏡像', 'ok');
           else
             toast(
-              `升級完成：成功 ${p.total - p.failed}${p.failed ? `、失败 ${p.failed}（看面板日誌）` : ''}`,
+              `升級完成：成功 ${p.total - p.failed}${p.failed ? `、失敗 ${p.failed}（看面板日誌）` : ''}`,
               p.failed ? 'error' : 'ok',
             );
           break;
         } catch {
-          /* 面板短暫不可达（不影响後台任务），继续轮询 */
+          /* 面板短暫不可达（不影响後台任务），繼續轮询 */
         }
       }
       await load();
@@ -497,7 +497,7 @@ export default function Admin({ onOpenMenu, onChangePassword }: { onOpenMenu: ()
   };
 
   // 一鍵升級全部"鏡像落後"的实例。後端异步執行（先統一拉鏡像、再逐个重建，可能數分鍾），
-  // 這里发起後轮询 upgrade-status 里的进度，避免单个请求悬死（旧版同步等待被反馈"一直卡死"）。
+  // 這里发起後轮询 upgrade-status 里的进度，避免单个请求悬死（舊版同步等待被反馈"一直卡死"）。
   const upgradeAll = async () => {
     const n = upg?.outdatedCount || 0;
     const ok = await confirm({
@@ -531,11 +531,11 @@ export default function Admin({ onOpenMenu, onChangePassword }: { onOpenMenu: ()
     load();
   };
   const removeUser = async (u: PanelUser) => {
-    const ok = await confirm({ title: `删除子账号「${u.username}」？`, body: '該账户将无法再登錄。', danger: true, confirmText: '删除' });
+    const ok = await confirm({ title: `刪除子账号「${u.username}」？`, body: '該账户将无法再登錄。', danger: true, confirmText: '刪除' });
     if (!ok) return;
     try {
       await api.deleteUser(u.id);
-      toast('已删除', 'ok');
+      toast('已刪除', 'ok');
     } catch (e: any) {
       toast(e.message, 'error');
     }
@@ -608,7 +608,7 @@ export default function Admin({ onOpenMenu, onChangePassword }: { onOpenMenu: ()
               <EmptyState
                 icon="🖥️"
                 title="還没有实例"
-                sub="新建一个实例（微信 / Chromium 浏览器），进入後即可在浏览器里使用"
+                sub="新建一個實例（微信 / Chromium 瀏覽器），進入後即可在瀏覽器裡使用"
                 action={
                   <button className="btn btn-primary" onClick={() => setCreatingInst(true)}>
                     ＋ 新建實例
@@ -656,7 +656,7 @@ export default function Admin({ onOpenMenu, onChangePassword }: { onOpenMenu: ()
               <EmptyState
                 icon="👥"
                 title="還没有子账号"
-                sub="子账号是登錄這套面板的身份，可按账号分配能访问哪些实例"
+                sub="子賬號是登錄這套面板的身份，可按賬號分配能訪問哪些實例"
                 action={
                   <button className="btn btn-primary" onClick={() => setCreatingUser(true)}>
                     ＋ 新建子賬號
@@ -671,7 +671,7 @@ export default function Admin({ onOpenMenu, onChangePassword }: { onOpenMenu: ()
                       <span className="inst-name">{u.username}</span>
                       {u.disabled ? <span className="tag tag-off">已禁用</span> : <span className="tag tag-on">正常</span>}
                     </div>
-                    <div className="inst-sub">{u.allowedInstances.length > 0 ? `可访问 ${u.allowedInstances.length} 个实例` : '未分配实例'}</div>
+                    <div className="inst-sub">{u.allowedInstances.length > 0 ? `可訪問 ${u.allowedInstances.length} 個實例` : '未分配實例'}</div>
                     {u.allowedInstances.length > 0 && (
                       <div className="chip-row" style={{ marginTop: 8 }}>
                         {u.allowedInstances.map((id) => (
@@ -695,7 +695,7 @@ export default function Admin({ onOpenMenu, onChangePassword }: { onOpenMenu: ()
                         重置密碼
                       </button>
                       <button className="btn-text danger" onClick={() => removeUser(u)}>
-                        删除
+                        刪除
                       </button>
                     </div>
                   </div>
@@ -710,8 +710,8 @@ export default function Admin({ onOpenMenu, onChangePassword }: { onOpenMenu: ()
             {orphanConts.length > 0 && (
               <>
                 <div className="section-row">
-                  <span className="section-title">残留容器</span>
-                  <span className="muted small">不属于任何登记实例（多为創建失败遗留）；它们占着數據卷名，需先清理它们才能删除同名數據卷。</span>
+                  <span className="section-title">殘留容器</span>
+                  <span className="muted small">不属于任何登記实例（多为創建失敗遺留）；它们占着數據卷名，需先清理它们才能刪除同名數據卷。</span>
                 </div>
                 <div className="inst-grid">
                   {orphanConts.map((c) => (
@@ -727,7 +727,7 @@ export default function Admin({ onOpenMenu, onChangePassword }: { onOpenMenu: ()
                       )}
                       <div className="inst-admin-links">
                         <button className="btn-text danger" onClick={() => removeOrphanCont(c)}>
-                          删除容器
+                          刪除容器
                         </button>
                       </div>
                     </div>
@@ -739,7 +739,7 @@ export default function Admin({ onOpenMenu, onChangePassword }: { onOpenMenu: ()
               <>
                 <div className="section-row" style={{ marginTop: 22 }}>
                   <span className="section-title">未使用的數據卷</span>
-                  <span className="muted small">刪除實例时未勾选「彻底清除」會保留下来；可在新建实例时复用以继承聊天记录。</span>
+                  <span className="muted small">刪除實例时未勾選「彻底清除」會保留下来；可在新建实例时複用以繼承聊天記錄。</span>
                 </div>
                 <div className="inst-grid">
                   {orphanVols.map((v) => (
@@ -752,8 +752,8 @@ export default function Admin({ onOpenMenu, onChangePassword }: { onOpenMenu: ()
                         {typeof v.sizeBytes === 'number' ? `　·　${(v.sizeBytes / 1024 / 1024).toFixed(1)} MB` : ''}
                       </div>
                       <div className="inst-admin-links">
-                        <button className="btn-text" onClick={() => setCreatingInst(true)} title="去「新建实例」對話框，在「數據卷」下拉里選擇复用此卷">
-                          复用为新實例
+                        <button className="btn-text" onClick={() => setCreatingInst(true)} title="去「新建实例」對話框，在「數據卷」下拉里選擇複用此卷">
+                          複用为新實例
                         </button>
                         <button className="btn-text danger" onClick={() => removeOrphanVol(v.name)}>
                           徹底刪除
@@ -863,7 +863,7 @@ export default function Admin({ onOpenMenu, onChangePassword }: { onOpenMenu: ()
           onClose={() => setDeleteInst(null)}
           onDone={() => {
             setDeleteInst(null);
-            toast('实例已删除', 'ok');
+            toast('实例已刪除', 'ok');
             load();
           }}
         />
@@ -918,7 +918,7 @@ function RenameInstance({ inst, onClose, onDone }: { inst: InstanceWithStatus; o
       await api.renameInstance(inst.id, name.trim());
       onDone();
     } catch (e: any) {
-      setErr(e.message || '重命名失败');
+      setErr(e.message || '重命名失敗');
     } finally {
       setBusy(false);
     }
@@ -954,7 +954,7 @@ function RenameUser({ user, onClose, onDone }: { user: PanelUser; onClose: () =>
       await api.renameUser(user.id, name.trim());
       onDone();
     } catch (e: any) {
-      setErr(e.message || '改名失败');
+      setErr(e.message || '改名失敗');
     } finally {
       setBusy(false);
     }
@@ -997,7 +997,7 @@ function ResetPassword({ user, onClose, onDone }: { user: PanelUser; onClose: ()
       await api.resetUser(user.id, pw);
       onDone();
     } catch (e: any) {
-      setErr(e.message || '重置失败');
+      setErr(e.message || '重置失敗');
     } finally {
       setBusy(false);
     }
@@ -1052,7 +1052,7 @@ function InstanceSecurity({ inst, onClose, onDone }: { inst: InstanceWithStatus;
       onClose();
       onDone();
     } catch (e: any) {
-      toast(e.message || '重置失败', 'error');
+      toast(e.message || '重置失敗', 'error');
     } finally {
       setRegenBusy(false);
     }
@@ -1073,7 +1073,7 @@ function InstanceSecurity({ inst, onClose, onDone }: { inst: InstanceWithStatus;
         }
       } catch (e: any) {
         if (alive && initial) {
-          setErr(e?.message || '读取失败');
+          setErr(e?.message || '读取失敗');
           setLoaded(true);
         }
       }
@@ -1115,7 +1115,7 @@ function InstanceSecurity({ inst, onClose, onDone }: { inst: InstanceWithStatus;
       onDone();
       onClose();
     } catch (e: any) {
-      setErr(e.message || '保存失败');
+      setErr(e.message || '保存失敗');
     } finally {
       setBusy(false);
     }
@@ -1133,7 +1133,7 @@ function InstanceSecurity({ inst, onClose, onDone }: { inst: InstanceWithStatus;
         {!loaded ? (
           <div className="muted small" style={{ padding: '14px 0' }}>读取中…</div>
         ) : !data ? (
-          <div className="error">{err || '读取失败'}</div>
+          <div className="error">{err || '读取失敗'}</div>
         ) : (
           <>
             <div className="muted small" style={{ lineHeight: 1.6 }}>
@@ -1226,7 +1226,7 @@ function DeleteInstance({ inst, onClose, onDone }: { inst: InstanceWithStatus; o
       await api.deleteInstance(inst.id, purge);
       onDone();
     } catch (e: any) {
-      setErr(e.message || '删除失败');
+      setErr(e.message || '刪除失敗');
       setBusy(false);
     }
   };
@@ -1235,13 +1235,13 @@ function DeleteInstance({ inst, onClose, onDone }: { inst: InstanceWithStatus; o
       <div className="card modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 360 }}>
         <h2>刪除實例「{inst.name}」？</h2>
         <div className="muted" style={{ fontSize: 14, lineHeight: 1.5 }}>
-          容器會被移除。默认保留聊天记录（數據卷），之後可重建同名实例恢復。
+          容器會被移除。默认保留聊天記錄（數據卷），之後可重建同名实例恢復。
         </div>
         <label className={'purge-opt' + (purge ? ' on' : '')} onClick={() => setPurge((v) => !v)}>
           <span className="purge-check">{purge ? '✓' : ''}</span>
           <span>
-            同时永久删除聊天记录（數據卷）
-            <span className="muted small" style={{ display: 'block' }}>不可恢復，请谨慎勾选</span>
+            同时永久刪除聊天記錄（數據卷）
+            <span className="muted small" style={{ display: 'block' }}>不可恢復，请谨慎勾選</span>
           </span>
         </label>
         {err && <div className="error">{err}</div>}
@@ -1250,7 +1250,7 @@ function DeleteInstance({ inst, onClose, onDone }: { inst: InstanceWithStatus; o
             取消
           </button>
           <button type="button" className="btn btn-danger" disabled={busy} onClick={submit}>
-            {purge ? '连數據一起删除' : '刪除實例'}
+            {purge ? '连數據一起刪除' : '刪除實例'}
           </button>
         </div>
       </div>
@@ -1258,7 +1258,7 @@ function DeleteInstance({ inst, onClose, onDone }: { inst: InstanceWithStatus; o
   );
 }
 
-// 管理页的实例卡片：含微信版本管理（下載/更新）+ 重命名/分配/删除
+// 管理页的实例卡片：含微信版本管理（下載/更新）+ 重命名/分配/刪除
 function InstanceAdminCard({
   inst,
   outdated,
@@ -1323,7 +1323,7 @@ function InstanceAdminCard({
   let sub: string;
   if (acting) sub = acting;
   else if (busy) sub = wx.percent >= 0 ? `${wx.message || '处理中'} ${wx.percent}%` : wx.message || '请稍候…';
-  else if (wx.phase === 'error') sub = wx.message || '操作失败，可重试';
+  else if (wx.phase === 'error') sub = wx.message || '操作失敗，可重试';
   else if (offline) sub = inst.runtime === 'missing' ? '容器尚未創建' : '容器已停止';
   else if (installed) sub = wx.version ? `${profile.label} ${wx.version}` : `${profile.label}已就绪`;
   else sub = `${profile.label}尚未安裝`;
@@ -1399,7 +1399,7 @@ function InstanceAdminCard({
                       {installed ? profile.updateLabel : '下載安裝'}
                     </button>
                   )}
-                  <button className="btn-text" onClick={onUpgrade} title="拉取最新鏡像并重建（保留聊天记录）">
+                  <button className="btn-text" onClick={onUpgrade} title="拉取最新鏡像并重建（保留聊天記錄）">
                     升級實例
                   </button>
                   {!offline && (
@@ -1501,7 +1501,7 @@ function InstanceIconEditor({ inst, onClose, onDone }: { inst: InstanceWithStatu
       setSel(await cropToDataUrl(cropSrc, area));
       setCropSrc('');
     } catch {
-      toast('裁剪失败', 'error');
+      toast('裁剪失敗', 'error');
     }
   };
 
@@ -1512,7 +1512,7 @@ function InstanceIconEditor({ inst, onClose, onDone }: { inst: InstanceWithStatu
       onDone();
       onClose();
     } catch (e: any) {
-      toast(e?.message || '保存失败', 'error');
+      toast(e?.message || '保存失敗', 'error');
     } finally {
       setBusy(false);
     }
@@ -1579,9 +1579,9 @@ function InstanceIconEditor({ inst, onClose, onDone }: { inst: InstanceWithStatu
   );
 }
 
-// 數據卷管理（仅管理员）：整卷備份/恢復 + 文件浏览器（浏览/上传/解压/下載/改名/移动/删除）。
+// 數據卷管理（仅管理员）：整卷備份/恢復 + 文件浏览器（浏览/上传/解压/下載/改名/移动/刪除）。
 // 主要场景：把 PC 微信數據迁移上来、跨实例迁移、離線備份。全程在「运行中」的实例上操作
-// （浏览/改名/删除靠 docker exec，需容器运行）。整卷恢復會覆盖全部數據，强提示并建议恢復後重啟实例。
+// （浏览/改名/刪除靠 docker exec，需容器运行）。整卷恢復會覆盖全部數據，强提示并建议恢復後重啟实例。
 function VolumeManager({ inst, onClose, onChanged }: { inst: InstanceWithStatus; onClose: () => void; onChanged: () => void }) {
   const { toast, confirm } = useUI();
   const [path, setPath] = useState('');
@@ -1608,7 +1608,7 @@ function VolumeManager({ inst, onClose, onChanged }: { inst: InstanceWithStatus;
       setEntries(r.entries);
       setPath(r.path);
     } catch (e: any) {
-      setErr(e?.message || '读取失败');
+      setErr(e?.message || '读取失敗');
     } finally {
       setLoading(false);
     }
@@ -1636,7 +1636,7 @@ function VolumeManager({ inst, onClose, onChanged }: { inst: InstanceWithStatus;
       if (okMsg) toast(okMsg, 'ok');
       if (!skipReload) await load();
     } catch (e: any) {
-      toast(e?.message || '操作失败', 'error');
+      toast(e?.message || '操作失敗', 'error');
     } finally {
       setBusy('');
     }
@@ -1661,13 +1661,13 @@ function VolumeManager({ inst, onClose, onChanged }: { inst: InstanceWithStatus;
 
   const doDelete = async (en: VolEntry) => {
     const ok = await confirm({
-      title: `删除「${en.name}」？`,
-      body: en.type === 'dir' ? '将递归删除該文件夹下所有内容，不可恢復。' : '删除後不可恢復。',
+      title: `刪除「${en.name}」？`,
+      body: en.type === 'dir' ? '将递归刪除該文件夹下所有内容，不可恢復。' : '刪除後不可恢復。',
       danger: true,
-      confirmText: '删除',
+      confirmText: '刪除',
     });
     if (!ok) return;
-    await run('删除中…', () => api.volumeDelete(inst.id, join(path, en.name)), '已删除');
+    await run('刪除中…', () => api.volumeDelete(inst.id, join(path, en.name)), '已刪除');
   };
 
   const onPick = (kind: 'upload' | 'extract' | 'restore') => async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -1706,7 +1706,7 @@ function VolumeManager({ inst, onClose, onChanged }: { inst: InstanceWithStatus;
             <button className="btn" disabled={disabled} onClick={() => restoreRef.current?.click()}>恢復備份…</button>
             <input ref={restoreRef} type="file" accept=".gz,.tgz,.tar" hidden onChange={onPick('restore')} />
           </div>
-          <div className="vol-hint">整卷含聊天记录，用于跨实例迁移 / 離線備份。</div>
+          <div className="vol-hint">整卷含聊天記錄，用于跨实例迁移 / 離線備份。</div>
         </div>
 
         {offline ? (
@@ -1822,7 +1822,7 @@ function VolumeManager({ inst, onClose, onChanged }: { inst: InstanceWithStatus;
                         >
                           {EditIcon}
                         </button>
-                        <button className="vol-act danger" title="删除" disabled={disabled} onClick={() => doDelete(en)}>
+                        <button className="vol-act danger" title="刪除" disabled={disabled} onClick={() => doDelete(en)}>
                           {TrashIcon}
                         </button>
                       </div>
@@ -1890,7 +1890,7 @@ function CreateUser({ instances, onClose, onDone }: { instances: InstanceWithSta
       await api.createUser(username.trim(), password, [...sel]);
       onDone();
     } catch (e: any) {
-      setErr(e.message || '創建失败');
+      setErr(e.message || '創建失敗');
     } finally {
       setBusy(false);
     }
@@ -1943,9 +1943,9 @@ function CreateInstance({ subs, onClose, onDone }: { subs: PanelUser[]; onClose:
   const [sel, setSel] = useState<Set<string>>(new Set());
   const [err, setErr] = useState('');
   const [busy, setBusy] = useState(false);
-  // 未使用的旧數據卷（之前刪除實例但未勾选「彻底清除」时保留下来的），允许在此复用以继承聊天记录。
+  // 未使用的舊數據卷（之前刪除實例但未勾選「彻底清除」时保留下来的），允許在此複用以繼承聊天記錄。
   const [orphans, setOrphans] = useState<{ name: string; createdAt?: string }[]>([]);
-  const [reuse, setReuse] = useState<string>(''); // '' = 不复用，新建空卷
+  const [reuse, setReuse] = useState<string>(''); // '' = 不複用，新建空卷
 
   useEffect(() => {
     let alive = true;
@@ -1953,7 +1953,7 @@ function CreateInstance({ subs, onClose, onDone }: { subs: PanelUser[]; onClose:
       .listOrphanVolumes()
       .then(({ volumes }) => alive && setOrphans(volumes))
       .catch(() => {
-        /* 读取失败时不阻塞創建：列表为空即可，照常新建空卷 */
+        /* 读取失敗时不阻塞創建：列表为空即可，照常新建空卷 */
       });
     return () => {
       alive = false;
@@ -1968,7 +1968,7 @@ function CreateInstance({ subs, onClose, onDone }: { subs: PanelUser[]; onClose:
       await api.createInstance(name.trim(), [...sel], reuse || undefined, appType);
       onDone();
     } catch (e: any) {
-      setErr(e.message || '創建失败');
+      setErr(e.message || '創建失敗');
     } finally {
       setBusy(false);
     }
@@ -2012,13 +2012,13 @@ function CreateInstance({ subs, onClose, onDone }: { subs: PanelUser[]; onClose:
               <option value="">新建空卷（全新登錄）</option>
               {orphans.map((v) => (
                 <option key={v.name} value={v.name}>
-                  复用 · {v.name}
+                  複用 · {v.name}
                   {v.createdAt ? `（${v.createdAt.slice(0, 10)} 創建）` : ''}
                 </option>
               ))}
             </select>
             <div className="muted small" style={{ marginTop: 4 }}>
-              复用旧卷需**用原微信号扫码登錄**才能解密历史消息；用别的号登錄将看不到旧记录。
+              複用舊卷需**用原微信号扫码登錄**才能解密历史消息；用别的号登錄将看不到舊記錄。
             </div>
           </>
         )}
@@ -2061,7 +2061,7 @@ function AssignUsers({
       await api.setInstanceUsers(inst.id, [...sel]);
       onDone();
     } catch (e: any) {
-      setErr(e.message || '保存失败');
+      setErr(e.message || '保存失敗');
     } finally {
       setBusy(false);
     }
@@ -2113,7 +2113,7 @@ function AssignInstances({
       await api.setUserInstances(user.id, [...sel]);
       onDone();
     } catch (e: any) {
-      setErr(e.message || '保存失败');
+      setErr(e.message || '保存失敗');
     } finally {
       setBusy(false);
     }
