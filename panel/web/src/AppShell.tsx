@@ -161,7 +161,7 @@ function Sidebar({ collapsed, onToggleCollapsed }: { collapsed: boolean; onToggl
   const isEmbedded = typeof window !== 'undefined' && window.self !== window.top; // iframe 嵌入时隐藏退出
   const go = (p: string) => nav(p);
 
-  // 有新版时在「管理」入口点个红点（仅管理员，因为升级面板需管理员在宿主操作）。
+  // 有新版时在「管理」入口点个红点（仅管理員，因为升级面板需管理員在宿主操作）。
   // 依赖 loc.pathname：导航时复查一次（服务端有缓存、开销极小），保证刚启动时首检完成后红点能及时出现。
   const [hasUpdate, setHasUpdate] = useState(false);
   useEffect(() => {
@@ -240,7 +240,7 @@ function Sidebar({ collapsed, onToggleCollapsed }: { collapsed: boolean; onToggl
         {!collapsed && (
           <div className="sb-user">
             {user?.username}
-            {isAdmin && ' · 管理员'}
+            {isAdmin && ' · 管理員'}
           </div>
         )}
       </div>
@@ -268,8 +268,8 @@ const themeIcon: Record<ThemeMode, JSX.Element> = {
     </svg>
   ),
 };
-// 主题开关：统一控制「面板」+「实例桌面」深色。面板部分立即生效（本地 CSS）；实例部分仅管理员可改
-// （服务端持久化 + 对运行中实例 docker exec 实时切换；非管理员只切自己的面板观感，不动实例）。
+// 主题开关：统一控制「面板」+「实例桌面」深色。面板部分立即生效（本地 CSS）；实例部分仅管理員可改
+// （服务端持久化 + 对运行中实例 docker exec 实时切换；非管理員只切自己的面板观感，不动实例）。
 function ThemeToggle() {
   const { user } = useAuth();
   const isAdmin = user?.role === 'admin';
@@ -350,7 +350,7 @@ function HomeView({ onOpenMenu, onChangePassword }: { onOpenMenu: () => void; on
       <div className="content">
         <div className="hello">
           你好，<b>{user?.username}</b>
-          {isAdmin && <span className="tag">管理员</span>}
+          {isAdmin && <span className="tag">管理員</span>}
         </div>
 
         {user?.mustChangePassword && (
@@ -378,7 +378,7 @@ function HomeView({ onOpenMenu, onChangePassword }: { onOpenMenu: () => void; on
               <img src={`${BASE}/favicon.svg`} alt="" />
             </div>
             <div className="empty-title">还没有实例</div>
-            <div className="empty-sub">{isAdmin ? '去「管理」新建一个实例' : '请联系管理员为你分配实例'}</div>
+            <div className="empty-sub">{isAdmin ? '去「管理」新建一个实例' : '请联系管理員为你分配实例'}</div>
           </div>
         ) : (
           <div className="inst-grid">

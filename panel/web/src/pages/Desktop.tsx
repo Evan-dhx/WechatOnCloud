@@ -995,7 +995,7 @@ export default function InstanceView({ onOpenMenu }: { onOpenMenu: () => void })
                 {starting ? '启动中…' : inst.runtime === 'missing' ? '创建并启动' : '启动实例'}
               </button>
             ) : (
-              <div className="iv-notice-sub">请联系管理员启动该实例</div>
+              <div className="iv-notice-sub">请联系管理員启动该实例</div>
             )}
             {isAdmin && (
               <button className="btn-text" onClick={() => window.open(api.instanceLogsUrl(id), '_blank')}>
@@ -1029,7 +1029,7 @@ export default function InstanceView({ onOpenMenu }: { onOpenMenu: () => void })
                 去「管理」{inst.wechat.phase === 'error' ? '重试 / 更新' : '下载安装'}
               </button>
             ) : (
-              <div className="iv-notice-sub">请联系管理员在「管理」中下载安装{appLabel}</div>
+              <div className="iv-notice-sub">请联系管理員在「管理」中下载安装{appLabel}</div>
             )}
             {isAdmin && (
               <button className="btn-text" onClick={() => window.open(api.instanceLogsUrl(id), '_blank')}>
@@ -1083,7 +1083,7 @@ export default function InstanceView({ onOpenMenu }: { onOpenMenu: () => void })
               <div className="iv-loading-sub">
                 {isAdmin
                   ? '连接超时。可能是实例临时卡住，先「重新连接」；若仍无效请「重启实例」。'
-                  : '连接超时。可能是实例临时卡住，请先「重新连接」；若反复无效，请联系管理员重启该实例。'}
+                  : '连接超时。可能是实例临时卡住，请先「重新连接」；若反复无效，请联系管理員重启该实例。'}
               </div>
               <div className="iv-stuck-actions">
                 <button

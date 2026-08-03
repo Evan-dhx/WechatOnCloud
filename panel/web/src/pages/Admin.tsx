@@ -89,7 +89,7 @@ const DIAG_RANGE_OPTIONS = [
   { key: '1y', label: '1 年' },
 ];
 
-// 「診斷與日誌」（仅管理员）：单实例「日誌」只記錄該实例日誌；這里一键打包全局——系統信息 +
+// 「診斷與日誌」（仅管理員）：单实例「日誌」只記錄該实例日誌；這里一键打包全局——系統信息 +
 // 面板運維日誌 + 全部实例容器狀態/日誌 + 容器清單，便于排查部署/創建卡死/黑屏不可用等問題。
 function DiagnosticsSection() {
   const [range, setRange] = useState('24h');
@@ -767,7 +767,7 @@ export default function Admin({ onOpenMenu, onChangePassword }: { onOpenMenu: ()
           </>
         )}
 
-        {/* 账号：所有人（含子账号）都能在此改密。管理员放「用戶」Tab，子账号无 Tab 直接显示 */}
+        {/* 账号：所有人（含子账号）都能在此改密。管理員放「用戶」Tab，子账号无 Tab 直接显示 */}
         {(!isAdmin || tab === 'users') && (
           <>
             <div className="section-row" style={{ marginTop: isAdmin ? 22 : 0 }}>
@@ -777,7 +777,7 @@ export default function Admin({ onOpenMenu, onChangePassword }: { onOpenMenu: ()
               <div className="inst-card">
                 <div className="inst-head">
                   <span className="inst-name">{user?.username}</span>
-                  {isAdmin ? <span className="tag">管理员</span> : <span className="tag tag-on">子账号</span>}
+                  {isAdmin ? <span className="tag">管理員</span> : <span className="tag tag-on">子账号</span>}
                 </div>
                 <div className="inst-sub">{isAdmin ? '可訪問全部實例' : `可訪問 ${user?.allowedInstances.length ?? 0} 個實例`}</div>
                 <div className="inst-actions">
@@ -1579,7 +1579,7 @@ function InstanceIconEditor({ inst, onClose, onDone }: { inst: InstanceWithStatu
   );
 }
 
-// 數據卷管理（仅管理员）：整卷備份/恢復 + 文件浏览器（浏览/上传/解压/下載/改名/移动/刪除）。
+// 數據卷管理（仅管理員）：整卷備份/恢復 + 文件浏览器（浏览/上传/解压/下載/改名/移动/刪除）。
 // 主要场景：把 PC 微信數據迁移上来、跨实例迁移、離線備份。全程在「运行中」的实例上操作
 // （浏览/改名/刪除靠 docker exec，需容器运行）。整卷恢復會覆盖全部數據，强提示并建议恢復後重啟实例。
 function VolumeManager({ inst, onClose, onChanged }: { inst: InstanceWithStatus; onClose: () => void; onChanged: () => void }) {

@@ -137,7 +137,7 @@ export const api = {
   // 一键更新面板自身：拉新镜像 + 派生 helper 容器重建 woc-panel（带回滚）。返回后面板会重启。
   selfUpdatePanel: () => req<{ ok: boolean; target: string; message: string }>('/api/admin/version/self-update', { method: 'POST' }),
 
-  // 实例桌面深色（与面板主题统一的那个开关）：读取当前态 + 设置（管理员，实时切换运行中实例）。
+  // 实例桌面深色（与面板主题统一的那个开关）：读取当前态 + 设置（管理員，实时切换运行中实例）。
   getDesktopTheme: () => req<{ dark: boolean }>('/api/desktop-theme'),
   setDesktopTheme: (dark: boolean) =>
     req<{ ok: boolean; dark: boolean; applied: number; failed: number }>('/api/admin/desktop-theme', {
@@ -242,7 +242,7 @@ export const api = {
   downloadFileUrl: (id: string, name: string) => `${BASE}/api/instances/${id}/download?name=${encodeURIComponent(name)}`,
   deleteFile: (id: string, name: string) => req(`/api/instances/${id}/files?name=${encodeURIComponent(name)}`, { method: 'DELETE' }),
 
-  // 数据卷管理（仅管理员）
+  // 数据卷管理（仅管理員）
   volumeList: (id: string, path = '') =>
     req<{ path: string; entries: VolEntry[] }>(`/api/admin/instances/${id}/volume?path=${encodeURIComponent(path)}`),
   volumeMkdir: (id: string, path: string) =>
