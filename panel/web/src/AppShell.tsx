@@ -185,9 +185,9 @@ function Sidebar({ collapsed, onToggleCollapsed }: { collapsed: boolean; onToggl
       </div>
 
       <nav className="sb-nav">
-        <button className={'sb-item' + (loc.pathname === '/' ? ' on' : '')} onClick={() => go('/')} title="主页">
+        <button className={'sb-item' + (loc.pathname === '/' ? ' on' : '')} onClick={() => go('/')} title="Home">
           <span className="sb-ic">{Icon.home}</span>
-          {!collapsed && <span className="sb-label">主页</span>}
+          {!collapsed && <span className="sb-label">Home</span>}
         </button>
       </nav>
 
@@ -343,7 +343,7 @@ function HomeView({ onOpenMenu, onChangePassword }: { onOpenMenu: () => void; on
         <button className="ws-menu" onClick={onOpenMenu} aria-label="菜单">
           {Icon.menu}
         </button>
-        <span className="ws-title">主页</span>
+        <span className="ws-title">Home</span>
         <ThemeToggle />
       </header>
 
@@ -364,7 +364,7 @@ function HomeView({ onOpenMenu, onChangePassword }: { onOpenMenu: () => void; on
         )}
 
         <div className="section-row">
-          <span className="section-title">我的实例</span>
+          <span className="section-title">Instances</span>
           {isAdmin && (
             <button className="btn-text" onClick={() => nav('/admin')}>
               管理 ›
