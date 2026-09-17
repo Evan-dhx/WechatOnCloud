@@ -193,19 +193,11 @@ export default function InstanceView({ onOpenMenu }: { onOpenMenu: () => void })
     // 「重新连接」按钮与「重启实例」后的重连同样走整页重载（见 restartInstance / 桌面无响应面板）。
     window.location.reload();
   };
-  // 声音（扬声器）开关：每次打开实例都默认【关】，不持久化 on 状态（用户要求）。音频桥是额外一条到 kclient
-  // 的 socket.io，蓝牙外放(AirPods)等场景交互较敏感，默认关最稳、最可预期；想听声音手动开即可（开→建立音频桥，
-  // 关→断开）。开了之后在桌面上点一下即可解挂起出声（见下方 resumePlayback 的 iframe 手势监听）。
-  const [soundOn, setSoundOn] = useState(false);
-  const toggleSound = () => {
-    const v = !soundOn;
-    setSoundOn(v);
-    try {
-      window.localStorage.setItem('woc_sound_on', v ? '1' : '0');
-    } catch {
-      /* ignore */
-    }
-  };
+  // 声音（扬声器）开关：每次打开实例都默认【开】（用户要求；原设计默认关、不持久化 on 状态，维持不持久化）。
+  // 开→建立音频桥、关→断开（关着可减少一条到实例的连接）；仅实例处于焦点时出声（见下方 setActive 同步），
+  // 浏览器自动播放策略挂起 AudioContext 时，在桌面上点一下即恢复出声（resumePlayback 的 iframe 手势监听）。
+  const [soundOn, setSoundOn] = useState(true);
+  const toggleSound = () => setSoundOn((v) => !v);
   const [showKeys, setShowKeys] = useState(false);
   // 转发输入条「发送后自动回车」开关（默认开，保持 issue #81 起的既有行为）。
   // 关掉的场景（issue #125）：想先把长文/多行填进微信输入框里再自己斟酌、编辑后手动发；
@@ -466,7 +458,7 @@ export default function InstanceView({ onOpenMenu }: { onOpenMenu: () => void })
   // 音频/麦克风桥接：实例就绪即自动连接 kclient 的音频流（扬声器恒开，无需手动找工具条）；
   // 仅当本实例处于焦点（标签页可见且窗口聚焦）时出声/收音，失焦立即断开，避免多实例多端串音。
   useEffect(() => {
-    if (!showVnc || !id || !soundOn) return; // 声音默认关：未开则完全不连音频桥（回到 1.1.7 无音频的连接行为）
+    if (!showVnc || !id || !soundOn) return; // 声音默认开；手动关闭后则完全不连音频桥
     const audio = new VncAudio(id, micOn);
     audioRef.current = audio;
     audio.connect();
@@ -940,7 +932,7 @@ export default function InstanceView({ onOpenMenu }: { onOpenMenu: () => void })
             </button>
             <button
               className={'ws-action' + (soundOn ? ' on' : '')}
-              title={soundOn ? '聲音已開：已連接實例音頻。點擊關閉（關閉可減少一條到實例的連接，更穩）' : '聲音已關：預設不連音頻橋（連接更穩）。點此開啟以聽到實例聲音'}
+              title={soundOn ? '聲音已開：已連接實例音頻。點擊關閉（關閉可減少一條到實例的連接，更穩）' : '聲音已關：未連接實例音頻。點此開啟以聽到實例聲音'}
               onClick={toggleSound}
             >
               聲音：{soundOn ? '開' : '關'}
@@ -1068,7 +1060,7 @@ export default function InstanceView({ onOpenMenu }: { onOpenMenu: () => void })
               <div className="spinner" />
               <div className="iv-loading-text">正在连接桌面…</div>
               <div className="iv-loading-sub">{profile.enterHint}</div>
-              <div className="iv-loading-sub">拖文件到此处即可上传；需要声音点顶部「声音」开启，再在画面上点一下即出声</div>
+              <div className="iv-loading-sub">拖文件到此处即可上传；声音默认开启，在画面上点一下即可出声</div>
               {!window.isSecureContext && (
                 <div className="iv-loading-warn">当前非 HTTPS 访问，浏览器将禁用麦克风与摄像头（音频播放不受影响）</div>
               )}

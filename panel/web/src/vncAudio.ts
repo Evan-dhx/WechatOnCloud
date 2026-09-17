@@ -20,12 +20,31 @@ function loadIo(id: string): Promise<any> {
   const w = window as any;
   if (w.io) return Promise.resolve(w.io);
   const existing = document.getElementById('woc-socketio') as HTMLScriptElement | null;
-  if (existing && (existing as any)._wocPromise) return (existing as any)._wocPromise;
+  // 只复用尚未 resolve 的 pending promise；已 reject 的不复用（否则一次失败永远失败）
+  if (existing && (existing as any)._wocPromise) {
+    return (existing as any)._wocPromise.then(
+      (v: any) => v,
+      () => {
+        // 上次失败：清理旧 script 和缓存，重新加载
+        try { existing.remove(); } catch { /* ignore */ }
+        return loadIo(id);
+      },
+    );
+  }
   const p = new Promise<any>((resolve, reject) => {
     const s = document.createElement('script');
     s.id = 'woc-socketio';
     s.src = `${BASE}/desktop/${encodeURIComponent(id)}/audio/socket.io/socket.io.js`;
-    s.onload = () => ((window as any).io ? resolve((window as any).io) : reject(new Error('io 未就绪')));
+    s.onload = () => {
+      // onload 触发时 window.io 可能尚未初始化完成（TDZ），轮询等待就绪
+      let tries = 0;
+      const check = () => {
+        if ((window as any).io) { resolve((window as any).io); return; }
+        if (++tries > 20) { reject(new Error('io 未就绪')); return; }
+        setTimeout(check, 50);
+      };
+      check();
+    };
     s.onerror = () => reject(new Error('加载 socket.io 失败'));
     document.head.appendChild(s);
     (s as any)._wocPromise = p;
@@ -141,28 +160,47 @@ export class VncAudio {
   }
 
   // 建立 socket 连接（不自动出声，由 setActive 控制）。
+  // 带重试：loadIo 或 socket 创建偶发失败（TDZ / 脚本未就绪），重试避免全程静音。
   async connect() {
     if (this.socket || this.destroyed) return;
-    const io = await loadIo(this.id);
-    if (this.destroyed) return;
-    this.socket = io(window.location.origin, {
-      path: `${BASE}/desktop/${this.id}/audio/socket.io`,
-      transports: ['websocket', 'polling'],
-      withCredentials: true,
-      reconnection: true,
-    });
-    this.socket.on('audio', (data: ArrayBuffer) => {
-      if (this.active && this.player) this.player.feed(data);
-    });
-    this.socket.on('connect', () => {
-      if (this.active) this.open();
-    });
-    // 关键：断线必须复位 opened，否则重连后 open() 以为已经开过、跳过 emit('open')，
-    // 服务端(kclient)永远不会重新开始推流 → 实例升级/重启/面板更新/网络抖动后全程静音
-    //（用户反馈"声音大概率播放不出来"的主因）。复位后上面的 connect 处理器会重新 open。
-    this.socket.on('disconnect', () => {
-      this.opened = false;
-    });
+    const MAX_RETRIES = 3;
+    for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+      try {
+        if (this.destroyed) return;
+        const io = await loadIo(this.id);
+        if (this.destroyed) return;
+        this.socket = io(window.location.origin, {
+          path: `${BASE}/desktop/${this.id}/audio/socket.io`,
+          transports: ['websocket', 'polling'],
+          withCredentials: true,
+          reconnection: true,
+        });
+        this.socket.on('audio', (data: ArrayBuffer) => {
+          if (this.active && this.player) this.player.feed(data);
+        });
+        this.socket.on('connect', () => {
+          if (this.active) this.open();
+        });
+        // 关键：断线必须复位 opened，否则重连后 open() 以为已经开过、跳过 emit('open')，
+        // 服务端(kclient)永远不会重新开始推流 → 实例升级/重启/面板更新/网络抖动后全程静音
+        //（用户反馈"声音大概率播放不出来"的主因）。复位后上面的 connect 处理器会重新 open。
+        this.socket.on('disconnect', () => {
+          this.opened = false;
+        });
+        // 关键修复：connect() 是 async 的，setActive() 可能在 socket 创建前就调用（iframe 嵌入场景：
+        // document.hasFocus()=false → setActive(false) → close() 但 socket 为 null → 无操作；
+        // 然后 connect() 完成但 active=false → 'connect' handler 跳过 open() → 全程静音）。
+        // 这里在 socket 创建后检查 active 状态，若已为 true 则立即 open。
+        if (this.active) this.open();
+        return; // 成功
+      } catch (e) {
+        console.warn(`[vncAudio] connect attempt ${attempt + 1} failed:`, e);
+        this.socket = null;
+        if (attempt < MAX_RETRIES) {
+          await new Promise((r) => setTimeout(r, 1000 * (attempt + 1)));
+        }
+      }
+    }
   }
 
   // 焦点变化时调用：true=本实例获得焦点（出声+收音），false=失焦（断开设备）。
@@ -181,9 +219,38 @@ export class VncAudio {
   // 外部（同源 iframe 内的用户手势）通知：恢复被浏览器自动播放策略挂起的播放上下文。
   // 关键：ensureResumeOnGesture 的监听绑在父窗口上，而用户点的是 iframe 内的桌面画面，事件不冒泡到父窗口，
   // 故"点画面"无法解挂起。这里由 Desktop 在 iframe 手势时主动调用，让点桌面也能出声（不必重开声音开关）。
+  // 修复 iframe 嵌入场景：connect() 异步完成前 sync() 已设 active=false → socket 连上后 open() 被跳过 →
+  // player 从未创建。这里在手势内延迟初始化 player + AudioContext，并设 active=true 让 socket 连上后自动 open。
   resumePlayback() {
     if (this.destroyed) return;
-    this.player?.audioCtx?.resume().catch(() => {});
+    // 延迟初始化：若 player 不存在（因 connect 竞态导致 open 被跳过），在手势内创建
+    if (!this.player) {
+      this.player = new PcmPlayer();
+      this.player.init();
+    }
+    // 在手勢内创建 AudioContext（确保 running 而非 suspended）
+    if (!this.player.audioCtx) {
+      const Ctx = (window as any).AudioContext || (window as any).webkitAudioContext;
+      const ctx: AudioContext = new Ctx({ sampleRate: 44100 });
+      ctx.resume().catch(() => {});
+      const gain = ctx.createGain();
+      gain.gain.value = 1;
+      gain.connect(ctx.destination);
+      this.player.audioCtx = ctx;
+      (this.player as any).gain = gain;
+      (this.player as any).startTime = ctx.currentTime;
+    } else {
+      this.player.audioCtx.resume().catch(() => {});
+    }
+    // 设 active=true：若 socket 尚未连接，'connect' handler 会检查 active 并调用 open()；
+    // 若 socket 已连接但 opened=false，open() 会 emit('open') 开始推流。
+    if (!this.active) {
+      this.active = true;
+      this.open();
+      // 麦克风同样受竞态影响：setActive(false) 在 connect 完成前调用 → stopMic() →
+      // socket 连上后 startMic() 不被调用。这里在手势内补启动。
+      if (this.micEnabled) this.startMic();
+    }
   }
 
   private open() {
