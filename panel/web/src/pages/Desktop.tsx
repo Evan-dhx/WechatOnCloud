@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { api, appProfile, BASE } from '../api';
 import { useUI } from '../ui';
@@ -236,6 +236,13 @@ export default function InstanceView({ onOpenMenu }: { onOpenMenu: () => void })
     }
     audioRef.current?.setMicEnabled(v);
   };
+  // 后台声音模式（URL ?bg=1）：ENGKPI 平台登录后用隐藏 iframe 常驻本页——不渲染任何桌面 UI，
+  // 仅建立音频桥，让微信提示音/通话在用户浏览平台其他页面时仍能听到。后台桥无视本页焦点，
+  // 改由心跳让位机制协调出声权（见下方 BroadcastChannel 效果）；页面不可见故收不到手势，
+  // 由宿主页面（同源）经 window.__wocBgResume 在手势内调用 resumePlayback 解 AudioContext 挂起。
+  const bgMode = useMemo(() => new URLSearchParams(window.location.search).get('bg') === '1', []);
+  const lastVisibleBeat = useRef(Date.now());
+  const bgActiveRef = useRef(true);
   const [imeText, setImeText] = useState('');
   const [imeSending, setImeSending] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -438,12 +445,57 @@ export default function InstanceView({ onOpenMenu }: { onOpenMenu: () => void })
   //     成品由「无感输入」钩子经 xdotool 转发（见 installSeamlessIme）。
   //   转发（forward）：enable_ime=false，VNC 直接打字纯 keysym（英文/数字正常）；中文走底部输入条。
   useEffect(() => {
+    if (bgMode) return; // 后台页不参与输入模式：避免覆盖可见实例页共享的 enable_ime
     try {
       window.localStorage.setItem('enable_ime', inputMode === 'seamless' ? 'true' : 'false');
     } catch {
       /* 隐私模式等禁用 localStorage：忽略 */
     }
-  }, [id, inputMode]);
+  }, [bgMode, id, inputMode]);
+
+  // 让位机制：可见实例页（非 bg）每 2s 广播心跳；后台桥超过 5s 收不到心跳才接管出声，
+  // 收到心跳立即让位（setActive 切换）——用户正在看某实例页时后台桥绝不双声。
+  useEffect(() => {
+    if (!bgMode) return;
+    const bc = new BroadcastChannel('woc-audio-bridge');
+    bc.onmessage = (e) => {
+      if (e.data?.type === 'alive') lastVisibleBeat.current = Date.now();
+    };
+    const timer = window.setInterval(() => {
+      const active = Date.now() - lastVisibleBeat.current > 5000;
+      if (active !== bgActiveRef.current) {
+        bgActiveRef.current = active;
+        if (active) audioRef.current?.setActive(true);
+        else audioRef.current?.setActive(false);
+      }
+    }, 1000);
+    return () => {
+      window.clearInterval(timer);
+      bc.close();
+    };
+  }, [bgMode]);
+
+  // 可见实例页（非 bg）：广播心跳让后台桥让位。
+  useEffect(() => {
+    if (bgMode || !showVnc) return;
+    const bc = new BroadcastChannel('woc-audio-bridge');
+    const beat = () => bc.postMessage({ type: 'alive', id });
+    beat();
+    const timer = window.setInterval(beat, 2000);
+    return () => {
+      window.clearInterval(timer);
+      bc.close();
+    };
+  }, [bgMode, showVnc, id]);
+
+  // 后台模式：把 resume 能力挂到 window 上，供宿主页面（ENGKPI，同源）在用户手势内调用。
+  useEffect(() => {
+    if (!bgMode) return;
+    (window as any).__wocBgResume = () => audioRef.current?.resumePlayback();
+    return () => {
+      delete (window as any).__wocBgResume;
+    };
+  }, [bgMode]);
 
   // 无感模式：往同源 iframe 装「中文转发 + 有序队列」钩子；切回转发/重连/卸载时自动移除。
   useEffect(() => {
@@ -462,7 +514,8 @@ export default function InstanceView({ onOpenMenu }: { onOpenMenu: () => void })
     const audio = new VncAudio(id, micOn);
     audioRef.current = audio;
     audio.connect();
-    const isFocused = () => !document.hidden && document.hasFocus();
+    // 焦点判定：普通模式 = 本页可见且聚焦；后台模式 = 无视本页焦点，出声权由让位机制（bgActiveRef）决定。
+    const isFocused = () => (bgMode ? bgActiveRef.current : !document.hidden && document.hasFocus());
     const sync = () => audio.setActive(isFocused());
     sync(); // 初始：若当前已聚焦则立即开声
     // 关窗/关标签页时彻底断开音频桥（issue #82）：React effect 的清理在直接关闭窗口时不一定执行，
@@ -471,14 +524,19 @@ export default function InstanceView({ onOpenMenu }: { onOpenMenu: () => void })
     const onPageHide = (e: PageTransitionEvent) => {
       if (!e.persisted) audio.destroy();
     };
-    document.addEventListener('visibilitychange', sync);
-    window.addEventListener('focus', sync);
-    window.addEventListener('blur', sync);
+    if (!bgMode) {
+      // 后台页恒隐藏（document.hidden 恒 true、hasFocus 恒 false），焦点事件无意义，不绑定以免覆盖让位状态。
+      document.addEventListener('visibilitychange', sync);
+      window.addEventListener('focus', sync);
+      window.addEventListener('blur', sync);
+    }
     window.addEventListener('pagehide', onPageHide);
     return () => {
-      document.removeEventListener('visibilitychange', sync);
-      window.removeEventListener('focus', sync);
-      window.removeEventListener('blur', sync);
+      if (!bgMode) {
+        document.removeEventListener('visibilitychange', sync);
+        window.removeEventListener('focus', sync);
+        window.removeEventListener('blur', sync);
+      }
       window.removeEventListener('pagehide', onPageHide);
       audio.destroy();
       audioRef.current = null;
@@ -892,6 +950,12 @@ export default function InstanceView({ onOpenMenu }: { onOpenMenu: () => void })
   };
 
   const title = inst?.name || '实例';
+
+  // 后台声音模式：不渲染任何桌面 UI（宿主以 1px 隐藏 iframe 常驻本页），仅保留音频桥。
+  // 实例未就绪时同样渲染空壳——音频 effect 会在实例就绪（showVnc 变真）后自动建立连接。
+  if (bgMode) {
+    return <div className="ws-page" style={{ display: 'none' }} aria-hidden="true" />;
+  }
 
   return (
     <div className="ws-page">

@@ -96,6 +96,7 @@ import {
 } from './docker.js';
 import { createSession, getSession, destroySession, destroyUserSessions, SESSION_TTL_MS } from './sessions.js';
 import { handleSsoLogin, SESSION_TTL_MS as SSO_TTL } from './sso.js';
+import { startActivityMonitor, instanceActivityList } from './activity.js';
 import { parseHost, parseAllowedHosts, isRequestHostAllowed } from './host-guard.js';
 import { CURRENT_VERSION, versionInfo, ensureChecked, checkForUpdate, startUpdateChecker } from './version.js';
 import { triggerSelfUpdate } from './self-update.js';
@@ -428,6 +429,13 @@ app.get('/api/instances', async (req, reply) => {
     }),
   );
   return { instances: out };
+});
+
+// 实例消息活动（仅管理员）：供主平台后端轮询生成「新微信消息」通知事件。
+// lastActivityAt = 实例内微信消息库最新 mtime（epoch 秒，见 activity.ts）；主平台对比其前进即视为一次消息活动。
+app.get('/api/instances/activity', async (req, reply) => {
+  if (!requireAdmin(req, reply)) return;
+  return { activity: instanceActivityList() };
 });
 
 // 用户自助「卡死自愈」：当客户端检测到 VNC 多次干净重连仍连不上（多半是实例 KasmVNC 的 ws 接收器卡死——
@@ -1686,6 +1694,7 @@ await app.listen({ port: PORT, host: HOST });
 console.log(`[panel] 监听 http://${HOST}:${PORT}  （多实例反代已就绪）· 版本 ${CURRENT_VERSION}`);
 appendPanelLog('INFO', `面板启动 · 版本 ${CURRENT_VERSION} · 监听 ${HOST}:${PORT}`);
 startUpdateChecker(); // 后台检测新版（best-effort，失败静默）
+startActivityMonitor(); // 实例微信消息活动监测（10s 轮询，供主平台新消息通知；best-effort，失败静默）
 // 日志保留期清理：启动后跑一次 + 每 24h 一次，删除超过一年的日志行（unref 不阻止退出）。
 pruneOldLogs();
 setInterval(() => pruneOldLogs(), 24 * 60 * 60 * 1000).unref();

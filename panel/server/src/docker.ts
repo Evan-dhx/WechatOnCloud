@@ -880,6 +880,23 @@ async function execCapture(inst: Instance, cmd: string[], user = 'abc'): Promise
   });
 }
 
+// 读取实例内微信消息库的最新 mtime（epoch 秒，浮点；无数据/失败返回 0）。
+// 微信 4.x 数据库加密读不出未读数，但收到/发出消息都会即时落库（实测 mtime 更新延迟秒级、
+// 空闲时纹丝不动），故以「最新 db mtime」作为实例级「微信有新消息活动」的信号，
+// 供面板 /api/instances/activity 与主平台的新消息通知轮询使用（见 activity.ts）。
+export async function instanceDbActivity(inst: Instance): Promise<number> {
+  try {
+    const out = await execCapture(inst, [
+      'bash', '-c',
+      'find /config/xwechat_files/*/db_storage -name "*.db" -printf "%T@\\n" 2>/dev/null | sort -rn | head -1',
+    ]);
+    const v = parseFloat(out.trim());
+    return Number.isFinite(v) ? v : 0;
+  } catch {
+    return 0; // 容器未运行/探测失败：视为无活动，不抛错（轮询调用方逐实例容错）
+  }
+}
+
 // 触发下载/安装（detached，立即返回，后台下载）。按实例 appType 分发：app-ctl.sh wechat → 委托回
 // wechat-ctl.sh；telegram 等各自实现。兼容旧容器（升级前镜像里没有 /woc/app-ctl.sh）：有则用之，无则
 // 回退老的 wechat-ctl.sh（旧实例都是微信）。appType 取值受 instanceAppType 约束，可安全内插进 shell。
